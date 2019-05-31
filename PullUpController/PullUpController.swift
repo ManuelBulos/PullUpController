@@ -11,6 +11,12 @@ import WebKit
 
 class PullUpController: UIViewController {
 
+    lazy var containerView: UIView = {
+        let containerView = UIView()
+        containerView.translatesAutoresizingMaskIntoConstraints = false
+        return containerView
+    }()
+
     lazy var draggableBar: UIImageView = {
         let draggableBar = UIImageView()
         draggableBar.image = UIImage(named: "closeBar")
@@ -76,6 +82,11 @@ class PullUpController: UIViewController {
         return webView
     }()
 
+    lazy var panGestureRecognizer: UIPanGestureRecognizer = {
+        let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(panGesture(_:)))
+        return panGestureRecognizer
+    }()
+
     private let keyPathObserver: String =  "estimatedProgress"
 
     deinit {
@@ -84,6 +95,7 @@ class PullUpController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        addContainerView()
         addDraggableBar()
         addNavigationContainer()
         addCloseButton()
@@ -98,40 +110,46 @@ class PullUpController: UIViewController {
         setWebViewProgressObserver()
 
         loadWebSite()
+
+        containerView.addGestureRecognizer(panGestureRecognizer)
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        UIView.animate(withDuration: 0.3) { [unowned self] in
-            self.view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        }
+        addGrayedBackground()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        UIView.animate(withDuration: 0.1) { [unowned self] in
-            self.view.backgroundColor = UIColor.black.withAlphaComponent(0.0)
-        }
+        removeGrayedBackground()
+    }
+
+    private func addContainerView() {
+        view.addSubview(containerView)
+        containerView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
+        containerView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        containerView.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
+        containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
     }
 
     private func addDraggableBar() {
-        view.addSubview(draggableBar)
-        draggableBar.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
-        draggableBar.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor).isActive = true
-        draggableBar.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
+        containerView.addSubview(draggableBar)
+        draggableBar.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
+        draggableBar.topAnchor.constraint(equalTo: containerView.layoutMarginsGuide.topAnchor).isActive = true
+        draggableBar.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
         draggableBar.heightAnchor.constraint(equalToConstant: 42).isActive = true
     }
 
     private func addNavigationContainer() {
-        view.addSubview(navigationContainer)
-        navigationContainer.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
+        containerView.addSubview(navigationContainer)
+        navigationContainer.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
         navigationContainer.topAnchor.constraint(equalTo: draggableBar.bottomAnchor).isActive = true
-        navigationContainer.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
+        navigationContainer.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
         navigationContainer.heightAnchor.constraint(equalToConstant: 42).isActive = true
     }
 
     private func addCloseButton() {
-        view.addSubview(closeButton)
+        containerView.addSubview(closeButton)
         closeButton.leftAnchor.constraint(equalTo: navigationContainer.leftAnchor).isActive = true
         closeButton.topAnchor.constraint(equalTo: navigationContainer.layoutMarginsGuide.topAnchor).isActive = true
         closeButton.widthAnchor.constraint(equalToConstant: 55).isActive = true
@@ -139,7 +157,7 @@ class PullUpController: UIViewController {
     }
 
     private func addGoBackButton() {
-        view.addSubview(goBackButton)
+        containerView.addSubview(goBackButton)
         goBackButton.leftAnchor.constraint(equalTo: closeButton.layoutMarginsGuide.rightAnchor).isActive = true
         goBackButton.topAnchor.constraint(equalTo: navigationContainer.layoutMarginsGuide.topAnchor).isActive = true
         goBackButton.widthAnchor.constraint(equalToConstant: 55).isActive = true
@@ -147,7 +165,7 @@ class PullUpController: UIViewController {
     }
 
     private func addGoForwardButton() {
-        view.addSubview(goForwardButton)
+        containerView.addSubview(goForwardButton)
         goForwardButton.widthAnchor.constraint(equalToConstant: 55).isActive = true
         goForwardButton.topAnchor.constraint(equalTo: navigationContainer.layoutMarginsGuide.topAnchor).isActive = true
         goForwardButton.rightAnchor.constraint(equalTo: navigationContainer.layoutMarginsGuide.rightAnchor, constant: -43).isActive = true
@@ -155,7 +173,7 @@ class PullUpController: UIViewController {
     }
 
     private func addURLDescriptionLabel() {
-        view.addSubview(urlDescriptionLabel)
+        containerView.addSubview(urlDescriptionLabel)
         urlDescriptionLabel.leftAnchor.constraint(equalTo: goBackButton.layoutMarginsGuide.rightAnchor).isActive = true
         urlDescriptionLabel.topAnchor.constraint(equalTo: navigationContainer.layoutMarginsGuide.topAnchor).isActive = true
         urlDescriptionLabel.rightAnchor.constraint(equalTo: goForwardButton.layoutMarginsGuide.leftAnchor).isActive = true
@@ -163,11 +181,23 @@ class PullUpController: UIViewController {
     }
 
     private func addStackView() {
-        view.addSubview(stackView)
-        stackView.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
+        containerView.addSubview(stackView)
+        stackView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
         stackView.topAnchor.constraint(equalTo: navigationContainer.bottomAnchor).isActive = true
-        stackView.rightAnchor.constraint(equalTo: view.rightAnchor).isActive = true
-        stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+        stackView.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
+        stackView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor).isActive = true
+    }
+
+    private func addGrayedBackground() {
+        UIView.animate(withDuration: 0.3) { [unowned self] in
+            self.view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        }
+    }
+
+    private func removeGrayedBackground() {
+        UIView.animate(withDuration: 0.1) { [unowned self] in
+            self.view.backgroundColor = UIColor.black.withAlphaComponent(0.0)
+        }
     }
 
     private func configureNavigationContainer() {
@@ -210,6 +240,52 @@ class PullUpController: UIViewController {
     @objc func goForwardButtonTapped() {
         if webView.canGoForward {
             webView.goForward()
+        }
+    }
+
+    @objc func panGesture(_ recognizer: UIPanGestureRecognizer) {
+        switch recognizer.state {
+        case .changed:
+            webView.isUserInteractionEnabled = false
+            if containerView.frame.origin.y < 0 {
+                moveViewToParentsCenter(containerView)
+                addGrayedBackground()
+            } else {
+                removeGrayedBackground()
+                dragView(containerView, with: recognizer)
+            }
+        case .ended:
+            webView.isUserInteractionEnabled = true
+            if containerView.frame.origin.y > view.frame.height / 2 {
+                removeGrayedBackground()
+                moveViewOutsideScreen(containerView)
+            } else {
+                moveViewToParentsCenter(containerView)
+                addGrayedBackground()
+            }
+        default:
+            break
+        }
+    }
+
+    private func dragView(_ draggableView: UIView, with recognizer: UIPanGestureRecognizer) {
+        self.view.bringSubviewToFront(draggableView)
+        let yCoordinate = draggableView.center.y + recognizer.translation(in: containerView).y
+        draggableView.center = CGPoint(x: draggableView.center.x, y: yCoordinate)
+        recognizer.setTranslation(CGPoint.zero, in: draggableView)
+    }
+
+    private func moveViewToParentsCenter(_ view: UIView) {
+        UIView.animate(withDuration: 0.3) { [unowned self] in
+            view.center = self.view.center
+        }
+    }
+
+    private func moveViewOutsideScreen(_ view: UIView) {
+        UIView.animate(withDuration: 0.3, animations: { [unowned self] in
+            self.view.center.y = self.view.frame.maxY
+        }) { [unowned self] (_)  in
+            self.dismiss(animated: true)
         }
     }
 }
