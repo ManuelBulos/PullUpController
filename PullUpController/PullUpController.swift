@@ -128,8 +128,13 @@ class PullUpController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        addGrayedBackground()
         moveViewToParentsCenter(containerView)
+        addGrayedBackground()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        removeGrayedBackground()
     }
 
     private func addContainerView() {
@@ -197,13 +202,13 @@ class PullUpController: UIViewController {
     }
 
     private func addGrayedBackground() {
-        UIView.animate(withDuration: 0.3) { [unowned self] in
+        UIView.animate(withDuration: 0.25) { [unowned self] in
             self.view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         }
     }
 
     private func removeGrayedBackground() {
-        UIView.animate(withDuration: 0.1) { [unowned self] in
+        UIView.animate(withDuration: 0.25) { [unowned self] in
             self.view.backgroundColor = UIColor.black.withAlphaComponent(0.0)
         }
     }
