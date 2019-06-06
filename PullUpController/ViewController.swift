@@ -20,7 +20,7 @@ class ViewController: UIViewController {
         return openButton
     }()
 
-    lazy var pullUpController = PullUpController()
+    lazy var pullUpController = PullUpController(url: URL(string: "https://www.manuelbulos.com")!)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -35,7 +35,6 @@ class ViewController: UIViewController {
 
     @objc func openWebViewController() {
         let completion: () -> Void = {}
-        pullUpController.modalPresentationStyle = .overCurrentContext
         present(pullUpController, animated: true, completion: completion)
     }
 }

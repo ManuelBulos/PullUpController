@@ -87,10 +87,21 @@ class PullUpController: UIViewController {
         return panGestureRecognizer
     }()
 
+    private var url: URL
+
     private let keyPathObserver: String =  "estimatedProgress"
 
     deinit {
         webView.removeObserver(self, forKeyPath: keyPathObserver)
+    }
+
+    init(url: URL) {
+        self.url = url
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) is not supported")
     }
 
     override func viewDidLoad() {
@@ -104,12 +115,13 @@ class PullUpController: UIViewController {
         addURLDescriptionLabel()
         addStackView()
 
+        configurePresentationStyle()
         configureNavigationContainer()
 
         setWebViewDelegate()
         setWebViewProgressObserver()
 
-        loadWebSite()
+        loadURL(url)
 
         containerView.addGestureRecognizer(panGestureRecognizer)
     }
@@ -117,11 +129,7 @@ class PullUpController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         addGrayedBackground()
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        removeGrayedBackground()
+        moveViewToParentsCenter(containerView)
     }
 
     private func addContainerView() {
@@ -200,6 +208,10 @@ class PullUpController: UIViewController {
         }
     }
 
+    private func configurePresentationStyle() {
+        self.modalPresentationStyle = .overCurrentContext
+    }
+
     private func configureNavigationContainer() {
         navigationContainer.clipsToBounds = true
         navigationContainer.layer.cornerRadius = 8
@@ -217,8 +229,8 @@ class PullUpController: UIViewController {
                             context: nil)
     }
 
-    private func loadWebSite() {
-        webView.load(URLRequest(url: URL(string: "https://www.ticketmaster.com")!))
+    private func loadURL(_ url: URL) {
+        webView.load(URLRequest(url: url))
     }
 
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
@@ -249,7 +261,6 @@ class PullUpController: UIViewController {
             webView.isUserInteractionEnabled = false
             if containerView.frame.origin.y < 0 {
                 moveViewToParentsCenter(containerView)
-                addGrayedBackground()
             } else {
                 removeGrayedBackground()
                 dragView(containerView, with: recognizer)
